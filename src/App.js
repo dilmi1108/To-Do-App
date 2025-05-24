@@ -6,6 +6,15 @@ import './App.css';
 
 const priorities = ['Low', 'Medium', 'High'];
 
+// Helper to compare dates without time
+const isSameDay = (d1, d2) => {
+  return (
+    d1.getFullYear() === d2.getFullYear() &&
+    d1.getMonth() === d2.getMonth() &&
+    d1.getDate() === d2.getDate()
+  );
+};
+
 function App() {
   const [tasks, setTasks] = useState([]);
   const [input, setInput] = useState('');
@@ -15,7 +24,10 @@ function App() {
   const [selectedDate, setSelectedDate] = useState(new Date());
 
   const addTask = () => {
-    if (input.trim() === '') return;
+    if (input.trim() === '' || !dueDate) return;
+
+    const due = new Date(dueDate);
+    due.setHours(0, 0, 0, 0); // Normalize date
 
     setTasks([
       ...tasks,
@@ -24,7 +36,7 @@ function App() {
         text: input.trim(),
         completed: false,
         priority,
-        dueDate,
+        dueDate: due.toISOString(),
       },
     ]);
 
@@ -51,6 +63,7 @@ function App() {
     if (filter === 'All') return true;
     if (filter === 'Completed') return task.completed;
     if (filter === 'Pending') return !task.completed;
+    return true;
   });
 
   const priorityColor = (p) => {
@@ -74,18 +87,18 @@ function App() {
           onChange={setSelectedDate}
           value={selectedDate}
           tileContent={({ date, view }) => {
-            const dateString = date.toISOString().split('T')[0];
-            const hasTask = tasks.some(task => task.dueDate === dateString);
+            const hasTask = tasks.some(task =>
+              isSameDay(new Date(task.dueDate), date)
+            );
             return view === 'month' && hasTask ? (
               <div className="dot" />
             ) : null;
           }}
           tileClassName={({ date, view }) => {
-            const dateString = date.toISOString().split('T')[0];
-            if (view === 'month' && tasks.some(task => task.dueDate === dateString)) {
-              return 'highlight';
-            }
-            return null;
+            const hasTask = tasks.some(task =>
+              isSameDay(new Date(task.dueDate), date)
+            );
+            return view === 'month' && hasTask ? 'highlight' : null;
           }}
         />
       </motion.div>
